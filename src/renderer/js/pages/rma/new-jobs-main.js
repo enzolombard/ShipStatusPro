@@ -320,16 +320,23 @@ window.rmaModule = (function() {
   };
 
   const handleSaveComment = async () => {
-    const commentText = document.getElementById('commentText').value.trim();
+    const commentTextElement = document.getElementById('newJobsCommentText');
+    if (!commentTextElement) {
+      console.error('Comment text element not found');
+      notifications.showError('Comment dialog is not properly initialized.');
+      return;
+    }
+    
+    const commentText = commentTextElement.value.trim();
     
     if (!commentText) {
-      notifications.error('Please enter a comment before saving.');
+      notifications.showError('Please enter a comment before saving.');
       return;
     }
     
     const orderIdToUse = currentCommentOrderId || currentOrderId;
     if (!orderIdToUse) {
-      notifications.error('No order selected for comment.');
+      notifications.showError('No order selected for comment.');
       return;
     }
     
@@ -742,18 +749,34 @@ window.rmaModule = (function() {
   function openCommentDialog(orderId, customer) {
     console.log('Opening comment dialog for order:', orderId, 'customer:', customer);
     
-    // Initialize comment dialog if it doesn't exist
+    // Always reinitialize comment dialog to ensure it exists and has proper event listeners
+    initializeCommentDialog();
+    
+    // Double-check that the dialog was created successfully
     if (!commentDialog) {
-      initializeCommentDialog();
+      console.error('Failed to initialize comment dialog');
+      notifications.showError('Unable to open comment dialog. Please try again.');
+      return;
     }
     
     currentOrderId = orderId;
     currentCommentOrderId = orderId;
-    document.getElementById('commentOrderId').textContent = orderId;
-    document.getElementById('commentCustomer').textContent = customer;
-    document.getElementById('commentText').value = '';
-    commentDialog.style.display = 'block';
-    document.getElementById('commentText').focus();
+    
+    // Use New Jobs specific IDs
+    const orderIdElement = document.getElementById('newJobsCommentOrderId');
+    const customerElement = document.getElementById('newJobsCommentCustomer');
+    const textElement = document.getElementById('newJobsCommentText');
+    
+    if (orderIdElement && customerElement && textElement) {
+      orderIdElement.textContent = orderId;
+      customerElement.textContent = customer;
+      textElement.value = '';
+      commentDialog.style.display = 'block';
+      textElement.focus();
+    } else {
+      console.error('Comment dialog elements not found');
+      notifications.showError('Comment dialog is not properly initialized. Please refresh and try again.');
+    }
   }
   
   // saveOrderType function is defined later in the file
@@ -1299,45 +1322,54 @@ window.rmaModule = (function() {
    * Initialize comment dialog
    */
   function initializeCommentDialog() {
-    // Create comment dialog HTML if it doesn't exist
-    if (!document.getElementById('commentDialog')) {
-      const dialogHTML = `
-        <div id="commentDialog" class="dialog-overlay" style="display: none;">
-          <div class="dialog-content">
-            <div class="dialog-header">
-              <h3>Add Comment</h3>
-              <button class="close-dialog" id="closeCommentDialog">&times;</button>
-            </div>
-            <div class="dialog-body">
-              <div class="form-group">
-                <label>Order ID:</label>
-                <span id="commentOrderId"></span>
-              </div>
-              <div class="form-group">
-                <label>Customer:</label>
-                <span id="commentCustomer"></span>
-              </div>
-              <div class="form-group">
-                <label for="commentText">Comment:</label>
-                <textarea id="commentText" rows="4" placeholder="Enter your comment here..."></textarea>
-              </div>
-            </div>
-            <div class="dialog-footer">
-              <button id="saveCommentBtn" class="btn btn-primary">Save Comment</button>
-              <button id="cancelCommentBtn" class="btn btn-secondary">Cancel</button>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.insertAdjacentHTML('beforeend', dialogHTML);
+    // Remove any existing New Jobs comment dialog to prevent conflicts
+    const existingDialog = document.getElementById('newJobsCommentDialog');
+    if (existingDialog) {
+      existingDialog.remove();
     }
     
-    commentDialog = document.getElementById('commentDialog');
+    // Create comment dialog HTML with unique IDs for New Jobs
+    const dialogHTML = `
+      <div id="newJobsCommentDialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog-content">
+          <div class="dialog-header">
+            <h3>Add Comment - New Jobs</h3>
+            <button class="close-dialog" id="newJobsCloseCommentDialog">&times;</button>
+          </div>
+          <div class="dialog-body">
+            <div class="form-group">
+              <label>Order ID:</label>
+              <span id="newJobsCommentOrderId"></span>
+            </div>
+            <div class="form-group">
+              <label>Customer:</label>
+              <span id="newJobsCommentCustomer"></span>
+            </div>
+            <div class="form-group">
+              <label for="newJobsCommentText">Comment:</label>
+              <textarea id="newJobsCommentText" rows="4" placeholder="Enter your comment here..."></textarea>
+            </div>
+          </div>
+          <div class="dialog-footer">
+            <button id="newJobsSaveCommentBtn" class="btn btn-primary">Save Comment</button>
+            <button id="newJobsCancelCommentBtn" class="btn btn-secondary">Cancel</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', dialogHTML);
     
-    // Add event listeners for comment dialog
-    document.getElementById('closeCommentDialog')?.addEventListener('click', closeCommentDialog);
-    document.getElementById('saveCommentBtn')?.addEventListener('click', handleSaveComment);
-    document.getElementById('cancelCommentBtn')?.addEventListener('click', closeCommentDialog);
+    commentDialog = document.getElementById('newJobsCommentDialog');
+    
+    // Remove any existing event listeners first
+    const closeBtn = document.getElementById('newJobsCloseCommentDialog');
+    const saveBtn = document.getElementById('newJobsSaveCommentBtn');
+    const cancelBtn = document.getElementById('newJobsCancelCommentBtn');
+    
+    // Add fresh event listeners for comment dialog
+    closeBtn?.addEventListener('click', closeCommentDialog);
+    saveBtn?.addEventListener('click', handleSaveComment);
+    cancelBtn?.addEventListener('click', closeCommentDialog);
     
     // Close dialog when clicking outside
     commentDialog?.addEventListener('click', (e) => {
@@ -1345,6 +1377,8 @@ window.rmaModule = (function() {
         closeCommentDialog();
       }
     });
+    
+    console.log('New Jobs comment dialog initialized with unique IDs');
   }
   
   /**
@@ -1371,6 +1405,17 @@ window.rmaModule = (function() {
     document.getElementById('saveStatus')?.removeEventListener('click', handleSaveStatus);
     document.getElementById('cancelStatus')?.removeEventListener('click', handleCloseStatusDialog);
     window.removeEventListener('click', handleWindowClick);
+    
+    // Remove New Jobs specific comment dialog event listeners
+    document.getElementById('newJobsCloseCommentDialog')?.removeEventListener('click', closeCommentDialog);
+    document.getElementById('newJobsSaveCommentBtn')?.removeEventListener('click', handleSaveComment);
+    document.getElementById('newJobsCancelCommentBtn')?.removeEventListener('click', closeCommentDialog);
+    
+    // Remove the New Jobs comment dialog from DOM
+    const newJobsCommentDialog = document.getElementById('newJobsCommentDialog');
+    if (newJobsCommentDialog) {
+      newJobsCommentDialog.remove();
+    }
 
     // Reset state variables
     rmaContainer = null;
@@ -1379,7 +1424,9 @@ window.rmaModule = (function() {
     currentOrderId = null;
     currentCommentOrderId = null;
     isInitializing = false;
-    window.rmaModule = null; // Allow for garbage collection and re-loading
+    
+    console.log('RMA module cleanup completed');
+    // Note: Don't set window.rmaModule = null here to prevent module reference issues
   }
 
   // Public API
