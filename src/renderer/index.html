@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ShipStatus Pro</title>
+    <link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="./css/login.css">
+    <link rel="stylesheet" href="./css/enhanced-sidebar.css">
+    <link rel="stylesheet" href="./css/sidebar-animation.css">
+    <link rel="stylesheet" href="./css/animations.css">
+    <link rel="stylesheet" href="./css/components.css">
+    <link rel="stylesheet" href="./css/layout.css">
+    <link rel="stylesheet" href="./css/loading.css">
+    <!-- Ship Status Pro specific styles -->
+    <link rel="stylesheet" href="./css/dashboard.css">
+    <link rel="stylesheet" href="./css/orders.css">
+    <link rel="stylesheet" href="./css/orders2025.css">
+    <link rel="stylesheet" href="./css/pagination.css">
+    <link rel="stylesheet" href="./css/new-jobs-inline-filters.css">
+    <link rel="stylesheet" href="./css/notification-system.css">
+    <!-- Font Awesome for error message icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Core modules that should load first -->
+    <script src="js/loading/loading-animation.js"></script>
+    <script src="js/app-init.js"></script>
+    <script src="js/sidebar/enhanced-sidebar.js"></script>
+    <script src="js/sidebar/sidebar-animation.js"></script>
+    <script src="js/navigation/screen-controller.js"></script>
+    <script src="js/pages/login/login-main.js"></script>
+    <!-- Shared data store for transferring data between modules -->
+    <script src="js/shared/data-store.js"></script>
+    <!-- Dashboard module - load early to ensure it's available -->
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+   
+      
+   
+    <!-- Lottie animation library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js"></script>
+    
+
+  </head>
+  <body>
+    <div id="app-container">
+      <!-- Loading Screen with animated background -->
+      <div class="loading-screen" id="loading-screen">
+        <!-- Background particles -->
+        <div id="loading-particles"></div>
+        
+        <!-- Create a centered content container -->
+        <div class="loading-content-wrapper">
+          <h1>ShipStatus Pro</h1>
+          <div id="lottie-animation" class="lottie-container"></div>
+          <p>Initializing...</p>
+          
+          <!-- Animated progress bar -->
+          <div class="loading-progress-container">
+            <div class="loading-progress-bar" id="loading-progress"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Login screen with animated background -->
+      <div id="login-screen" class="login-container" style="display: none;">
+        <!-- Animated background particles -->
+        <div class="login-particles" id="login-particles"></div>
+        
+        <div class="login-form-container">
+          <!-- Logo animation container -->
+          <div class="login-logo-container">
+            <div class="login-logo-animation" id="login-logo-animation"></div>
+          </div>
+          
+          <h1>ShipStatus Pro</h1>
+          <h2>Welcome Back</h2>
+          
+          <!-- Error message container with improved styling -->
+          <div id="error-message" style="display: none;"></div>
+          
+          <form id="login-form" class="login-form">
+            <div class="form-group username-group">
+              <label for="username">Username</label>
+              <input
+                type="text"
+                id="username"
+                placeholder="Enter your username"
+                autocomplete="username"
+              />
+            </div>
+            
+            <div class="form-group password-group">
+              <label for="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+              />
+            </div>
+            
+            <button type="submit" class="login-button" id="login-button">
+              <span>Sign In</span>
+            </button>
+          </form>
+          
+          <div class="login-footer">
+            <p>Tacel Enterprise &copy; 2025</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Premium Sidebar Toggle Button -->
+      <button class="sidebar-toggle" id="sidebar-toggle" style="display: none;">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      
+      <!-- Sidebar -->
+      <div class="sidebar collapsed" id="sidebar" style="display: none;">
+        <div class="sidebar-header">
+          <!-- Animated background particles -->
+          <div class="particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+          </div>
+          
+          <!-- App logo and title -->
+          <div class="app-logo">
+            <div class="app-icon sidebar-lottie-container" id="sidebar-lottie-animation">
+              <!-- Lottie animation will be loaded here -->
+            </div>
+            <h1 class="app-title">ShipStatus Pro</h1>
+          </div>
+        </div>
+        
+        <!-- User information box -->
+        <div class="user-info-box">
+          <p><span><i class="fas fa-user"></i>USER:</span> <span id="sidebar-username">Pierre</span></p>
+          <p><span><i class="fas fa-calendar-alt"></i>DATE:</span> <span id="current-date"></span></p>
+          <p><span><i class="fas fa-clock"></i>TIME:</span> <span id="current-time"></span></p>
+        </div>
+        
+        <!-- Menu items with hover effects -->
+        <div class="menu-items">
+          <div class="menu-item active" id="dashboard-menu" onclick="showScreen('dashboard')">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </div>
+          <div class="menu-item" id="rma-menu" onclick="showScreen('rma')">
+            <i class="fas fa-exchange-alt"></i>
+            <span>New Jobs</span>
+          </div>
+          <div class="menu-item" id="ticketing-menu" onclick="showScreen('ticketing')">
+            <i class="fas fa-ticket-alt"></i>
+            <span>Current Jobs</span>
+          </div>
+        </div>
+        
+        <!-- Bottom controls container with logout and settings -->
+        <div class="bottom-controls">
+          <!-- Logout button (left half) -->
+          <div class="bottom-button logout-button" id="logout-button" onclick="logoutUser()">
+            <i class="fas fa-sign-out-alt"></i>
+          </div>
+          
+          <!-- Settings button (right half) -->
+          <div class="bottom-button settings-button" id="settings-menu" onclick="showScreen('settings')">
+            <i class="fas fa-cog"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Dashboard Screen (initially hidden) -->
+      <div id="dashboard-screen" class="dashboard-container" style="display: none;">
+        <!-- Dashboard content will be dynamically loaded by dashboardModule.initialize() -->
+      </div>
+      
+      <!-- Ticketing Screen (initially hidden) -->
+      <div id="ticketing-screen" class="dashboard-container" style="display: none;">
+        <div class="coming-soon-container">
+          <h1>Ticketing System</h1>
+          <div class="coming-soon-badge">
+            <i class="fas fa-clock"></i>
+            <span>Coming Soon</span>
+          </div>
+          <p>Our ticketing system is currently under development. It will allow you to create, track, and manage support tickets.</p>
+        </div>
+      </div>
+      
+      <!-- RMA Screen (initially hidden) -->
+      <div id="rma-screen" class="dashboard-container" style="display: none;">
+        <div class="coming-soon-container">
+          <h1>RMA Management</h1>
+          <div class="coming-soon-badge">
+            <i class="fas fa-clock"></i>
+            <span>Coming Soon</span>
+          </div>
+          <p>Our Return Merchandise Authorization (RMA) system is currently under development. It will allow you to process returns and manage warranty claims.</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- All JavaScript code has been moved to separate JS files -->
+    <!-- See js/loading/loading-animation.js for loading animations -->
+    <!-- See js/app-init.js for app initialization -->
+    <!-- See js/sidebar/enhanced-sidebar.js for sidebar functionality -->
+    <!-- See js/navigation/screen-controller.js for screen navigation -->
+    <!-- See js/pages/login/login-main.js for login functionality -->
+    
+    <!-- Activity Logger Utility -->
+    <script src="./js/utils/activity-logger.js"></script>
+    
+    <!-- Notification System -->
+    <script src="./js/utils/notification-system.js"></script>
+  </body>
+</html>

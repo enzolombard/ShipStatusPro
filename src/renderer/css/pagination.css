@@ -1,0 +1,73 @@
+/* Pagination Styles */
+.pagination-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-info {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #555;
+  font-weight: 500;
+}
+
+.pagination-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.pagination-btn {
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
+  border: 1px solid #ffca28;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  color: #2c2c2c;
+  font-weight: 600;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffeb3b 0%, #ffc107 100%);
+  border-color: #fff176;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+}
+
+.pagination-btn.active {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+  color: #2c2c2c;
+  border-color: #ff8f00;
+  box-shadow: 0 3px 10px rgba(255, 193, 7, 0.4);
+  font-weight: 700;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Add some spacing between table and pagination */
+.table-container {
+  margin-bottom: 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .pagination-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .pagination-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+}

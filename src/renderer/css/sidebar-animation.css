@@ -1,0 +1,70 @@
+/* Sidebar Lottie Animation Styles */
+
+/* Container for the sidebar Lottie animation */
+.sidebar-lottie-container {
+  width: 50px;
+  height: 50px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), 
+              inset 0 2px 5px rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* Hover effect for the animation container */
+.sidebar-lottie-container.animation-hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4),
+              0 0 15px rgba(79, 172, 254, 0.5),
+              inset 0 2px 5px rgba(255, 255, 255, 0.2);
+}
+
+/* Glow effect on hover */
+.sidebar-lottie-container.animation-hover::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, rgba(79, 172, 254, 0.3) 0%, rgba(0, 242, 254, 0) 70%);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  animation: glowPulse 2s infinite ease-in-out;
+}
+
+/* Pulsing glow animation */
+@keyframes glowPulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+/* Make sure the Lottie SVG fills the container */
+.sidebar-lottie-container svg {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar-lottie-container {
+    width: 45px;
+    height: 45px;
+  }
+}

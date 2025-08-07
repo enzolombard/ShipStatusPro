@@ -1,0 +1,374 @@
+/* New Jobs Inline Filter Styles */
+.new-jobs-container {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Styles */
+.new-jobs-page-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 15px;
+}
+
+.new-jobs-page-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+}
+
+.new-jobs-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  flex-wrap: nowrap;
+  overflow: visible;
+}
+
+/* Search Container - scoped to new jobs to prevent conflicts */
+.new-jobs-container .search-container {
+  position: relative !important;
+  flex: 1 !important;
+  transition: all 0.3s ease !important;
+  display: block !important;
+  margin-top: 0 !important;
+  gap: 0 !important;
+  min-width: 200px !important;
+}
+
+/* When filter panel is active, make search container smaller */
+.new-jobs-container .search-container.compact {
+  flex: 0.2 !important;
+  min-width: 150px !important;
+}
+
+.new-jobs-container .search-container input {
+  width: 100% !important;
+  padding: 8px 12px 8px 32px !important;
+  border: 1px solid #ffca28 !important;
+  border-radius: 20px !important;
+  font-size: 14px !important;
+  outline: none !important;
+  background: linear-gradient(135deg, #fff9c4, #fff59d) !important;
+  transition: all 0.2s ease !important;
+}
+
+.new-jobs-container .search-container input:focus {
+  border-color: #ff8f00 !important;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2) !important;
+  background: #ffffff !important;
+}
+
+.new-jobs-container .search-container i {
+  position: absolute !important;
+  left: 10px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: #ff8f00 !important;
+}
+
+/* Action Buttons */
+.new-jobs-action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ffd700, #ffb300, #ff8f00);
+  border: 1px solid #ffca28;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #2c2c2c;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+}
+
+.new-jobs-action-button:hover {
+  background: linear-gradient(135deg, #ffb300, #ff8f00, #e65100);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.4);
+}
+
+.new-jobs-action-button i {
+  margin-right: 5px;
+  font-size: 14px;
+}
+
+.new-jobs-refresh-button {
+  padding: 8px;
+  min-width: 36px;
+}
+
+.new-jobs-filter-button {
+  display: flex;
+  align-items: center;
+}
+
+.new-jobs-filter-button span {
+  margin-left: 5px;
+}
+
+/* Refresh Animation */
+.rotating {
+  animation: rotate 1s linear;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Notifications */
+.new-jobs-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  animation: slide-in 0.3s ease-out forwards;
+}
+
+.new-jobs-notification.success {
+  background: linear-gradient(135deg, #ffd700, #ffb300);
+  color: #2c2c2c;
+}
+
+.new-jobs-notification i {
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+.new-jobs-notification.fade-out {
+  animation: fade-out 0.5s ease-out forwards;
+}
+
+@keyframes slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fade-out {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+
+/* Inline Filter Panel - appears in same row as search */
+.new-jobs-inline-filter-panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #fff9c4, #fff59d);
+  border: 1px solid #ffca28;
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 40px;
+  overflow: hidden;
+  opacity: 0;
+  width: 0;
+  min-width: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.2);
+  margin-left: 10px;
+}
+
+.new-jobs-inline-filter-panel.active {
+  opacity: 1;
+  width: auto;
+  min-width: 600px;
+  flex: 1;
+}
+
+.new-jobs-filter-group {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 120px;
+}
+
+.new-jobs-filter-input {
+  padding: 6px 10px;
+  border: 1px solid #ffca28;
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+  height: 30px;
+  width: 100%;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.new-jobs-filter-input:focus {
+  border-color: #ff8f00;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
+}
+
+.new-jobs-date-range {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  min-width: 200px;
+}
+
+.new-jobs-date-range input[type="date"] {
+  flex: 1;
+}
+
+.new-jobs-date-range span {
+  color: #ff8f00;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.new-jobs-primary-button {
+  background: linear-gradient(135deg, #ffd700, #ffb300, #ff8f00);
+  color: #2c2c2c;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+}
+
+.new-jobs-primary-button:hover {
+  background: linear-gradient(135deg, #ffb300, #ff8f00, #e65100);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.4);
+}
+
+.new-jobs-secondary-button {
+  background: linear-gradient(135deg, #fff9c4, #fff59d);
+  color: #2c2c2c;
+  border: 1px solid #ffca28;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(255, 215, 0, 0.2);
+}
+
+.new-jobs-secondary-button:hover {
+  background: linear-gradient(135deg, #fff59d, #ffcc02);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+}
+
+/* Reset Filter Button */
+.new-jobs-reset-filters {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  background: linear-gradient(135deg, #fff9c4, #fff59d);
+  border: 1px solid #ffca28;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff8f00;
+  transition: all 0.2s ease;
+  flex: 0 0 auto;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.2);
+}
+
+.new-jobs-reset-filters:hover {
+  background: linear-gradient(135deg, #ffd700, #ffb300);
+  color: #2c2c2c;
+  transform: rotate(-45deg) scale(1.1);
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.4);
+}
+
+/* Order Type Filter Select */
+.new-jobs-order-type-select {
+  padding: 6px 10px;
+  border: 1px solid #ffca28;
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+  height: 30px;
+  width: 100%;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.new-jobs-order-type-select:focus {
+  border-color: #ff8f00;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .new-jobs-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .new-jobs-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .new-jobs-inline-filter-panel {
+    flex-direction: column;
+    height: auto;
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .new-jobs-filter-group {
+    width: 100%;
+  }
+  
+  .new-jobs-date-range {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
+/* Integration with existing orders page */
+.orders-page.new-jobs-enhanced {
+  padding: 0;
+}
+
+.orders-page.new-jobs-enhanced > .new-jobs-container {
+  height: 100%;
+  padding: 20px;
+}
+
+/* Hide original filters when inline filters are active */
+.orders-page.new-jobs-enhanced .filters-container {
+  display: none;
+}
+
+/* Adjust table container for inline filters */
+.orders-page.new-jobs-enhanced .orders-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.orders-page.new-jobs-enhanced .table-container {
+  flex: 1;
+  overflow: auto;
+}

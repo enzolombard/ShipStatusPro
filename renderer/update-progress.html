@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TACEL-NCR Updating</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    
+    .container {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 15px;
+    }
+    
+    .logo {
+      width: 48px;
+      height: 48px;
+      margin-right: 15px;
+    }
+    
+    h1 {
+      font-size: 20px;
+      margin: 0;
+      color: #2c3e50;
+    }
+    
+    .content {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    
+    .progress-container {
+      width: 100%;
+      max-width: 400px;
+      margin: 20px 0;
+    }
+    
+    .progress-bar {
+      height: 10px;
+      background-color: #e9ecef;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background-color: #007bff;
+      border-radius: 5px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+    
+    .progress-indeterminate .progress-fill {
+      width: 50%;
+      position: absolute;
+      animation: progress-indeterminate 1.5s infinite ease-in-out;
+    }
+    
+    @keyframes progress-indeterminate {
+      0% {
+        left: -50%;
+      }
+      100% {
+        left: 100%;
+      }
+    }
+    
+    .status {
+      margin-top: 15px;
+      font-weight: 500;
+    }
+    
+    .message {
+      margin-top: 10px;
+      color: #6c757d;
+      max-width: 400px;
+      word-wrap: break-word;
+      font-size: 14px;
+    }
+    
+    .footer {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+      transition: background-color 0.2s;
+      border: none;
+      outline: none;
+    }
+    
+    .btn-primary {
+      background-color: #007bff;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #0069d9;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .error-message {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 15px 0;
+      border-left: 4px solid #f5c6cb;
+      text-align: left;
+      max-width: 400px;
+      align-self: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="../renderer/assets/logo.png" alt="TACEL-NCR Logo" class="logo" onerror="this.src=''; this.style.display='none';">
+      <h1>TACEL-NCR Updating</h1>
+    </div>
+    
+    <div class="content">
+      <div class="progress-container">
+        <div id="progress-bar" class="progress-bar progress-indeterminate">
+          <div class="progress-fill"></div>
+        </div>
+      </div>
+      
+      <div id="status" class="status">Preparing update...</div>
+      <div id="message" class="message">Please wait while we update your application.</div>
+      
+      <div id="error-message" class="error-message hidden"></div>
+    </div>
+    
+    <div class="footer">
+      <button id="restart-btn" class="btn btn-primary hidden">Restart Application</button>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+    
+    // Elements
+    const progressBar = document.getElementById('progress-bar');
+    const progressFill = progressBar.querySelector('.progress-fill');
+    const statusEl = document.getElementById('status');
+    const messageEl = document.getElementById('message');
+    const errorMessageEl = document.getElementById('error-message');
+    const restartBtn = document.getElementById('restart-btn');
+    
+    // Status mapping
+    const statusMap = {
+      'start': 'Starting Update',
+      'backup': 'Creating Backup',
+      'update': 'Updating Files',
+      'dependencies': 'Installing Dependencies',
+      'rollback': 'Rolling Back',
+      'complete': 'Update Complete',
+      'error': 'Update Failed',
+      'elevated': 'Administrator Update'
+    };
+    
+    // Listen for progress updates
+    ipcRenderer.on('update-progress', (event, progress) => {
+      // Update status
+      if (statusMap[progress.status]) {
+        statusEl.textContent = statusMap[progress.status];
+      }
+      
+      // Update message
+      if (progress.message) {
+        messageEl.textContent = progress.message;
+      }
+      
+      // Handle error
+      if (progress.status === 'error') {
+        progressBar.classList.remove('progress-indeterminate');
+        errorMessageEl.textContent = progress.message;
+        errorMessageEl.classList.remove('hidden');
+      }
+      
+      // Handle completion
+      if (progress.status === 'complete') {
+        progressBar.classList.remove('progress-indeterminate');
+        progressFill.style.width = '100%';
+      }
+      
+      // Handle elevated update
+      if (progress.status === 'elevated') {
+        progressBar.classList.remove('progress-indeterminate');
+        progressFill.style.width = '100%';
+        messageEl.innerHTML = 'Update will continue with administrator privileges.<br>The application will close now and the update will run in a separate window.'; 
+      }
+    });
+    
+    // Listen for update complete
+    ipcRenderer.on('update-complete', () => {
+      restartBtn.classList.remove('hidden');
+    });
+    
+    // Restart button event listener
+    restartBtn.addEventListener('click', () => {
+      ipcRenderer.send('restart-app');
+    });
+  </script>
+</body>
+</html>
