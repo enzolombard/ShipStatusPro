@@ -341,10 +341,21 @@ window.rmaModule = (function() {
     }
     
     try {
+      // Immediately update the UI to show the new comment
+      // Find the comment text element for this order in the table
+      const commentTextDiv = document.querySelector(`.comment-btn[data-order="${orderIdToUse}"]`)?.closest('.status-comment')?.querySelector('.comment-text');
+      if (commentTextDiv) {
+        // Update the comment text in the UI immediately for instant feedback
+        commentTextDiv.textContent = commentText;
+        console.log(`Immediately updated UI comment for order ${orderIdToUse} to: ${commentText}`);
+      }
+      
+      // Save the comment to the database
       await saveComment(orderIdToUse, commentText);
       closeCommentDialog();
       
-      // Immediate refresh like Current Jobs - fast and responsive
+      // Refresh the table to ensure all data is in sync
+      // No delay needed since we've already updated the UI
       if (isFiltered && currentFilters) {
         await loadFilteredOrders(currentFilters, currentPage);
       } else {
@@ -478,7 +489,7 @@ window.rmaModule = (function() {
       })
       .catch(error => {
         console.error('Error loading orders:', error);
-        const tbody = document.getElementById('ordersBody');
+        const tbody = document.getElementById('rmaOrdersBody');
         if (tbody) {
           tbody.innerHTML = '<tr><td colspan="9" class="error-message">Error loading orders. Please try refreshing the page.</td></tr>';
         }
@@ -501,7 +512,7 @@ window.rmaModule = (function() {
     isFiltered = true; // Set flag to indicate we're viewing filtered results
     
     // Show loading message
-    document.getElementById('ordersBody').innerHTML = '<tr><td colspan="9" class="loading-message">Loading filtered orders...</td></tr>';
+    document.getElementById('rmaOrdersBody').innerHTML = '<tr><td colspan="9" class="loading-message">Loading filtered orders...</td></tr>';
     
     // Get filtered orders data with pagination
     getFilteredOrders(filters, page, pageSize)
@@ -520,7 +531,7 @@ window.rmaModule = (function() {
       })
       .catch(error => {
         console.error('Error loading filtered orders:', error);
-        document.getElementById('ordersBody').innerHTML = '<tr><td colspan="9" class="error-message">Error loading filtered orders: ' + error.message + '</td></tr>';
+        document.getElementById('rmaOrdersBody').innerHTML = '<tr><td colspan="9" class="error-message">Error loading filtered orders: ' + error.message + '</td></tr>';
       });
   }
   
@@ -622,8 +633,24 @@ window.rmaModule = (function() {
         console.log(`Processing ${response.data.length} filtered shipments (page ${page} of ${response.pagination.totalPages})`);
         
         // Map the database fields to the expected format (now from JOIN with OEORDH)
-        const orders = response.data.map(order => {
+        const orders = await Promise.all(response.data.map(async (order) => {
           console.log('Mapping filtered order from JOIN:', order.ack_number, 'Customer:', order.CUSTOMER);
+          
+          // Load comments for this order
+          let comments = '';
+          try {
+            const commentsResponse = await window.electron.ipcRenderer.invoke('get-order-comments', {
+              ackNumber: order.ack_number
+            });
+            
+            if (commentsResponse.success && commentsResponse.comments && commentsResponse.comments.length > 0) {
+              // Get the most recent comment
+              comments = commentsResponse.comments[0].comment_text || '';
+              console.log(`Loaded comment for ${order.ack_number}:`, comments);
+            }
+          } catch (commentError) {
+            console.warn(`Failed to load comments for ${order.ack_number}:`, commentError);
+          }
           
           return {
             ack_number: order.ack_number || 'Unknown',
@@ -636,11 +663,11 @@ window.rmaModule = (function() {
             LOCATION: order.LOCATION || 'Unknown',
             classification: order.classification || order.status || 'No Classification',
             status: order.status || order.classification || 'No Classification',
-            comments: '', // Separate field for user comments
-            COMMENTS: '', // Legacy field for user comments
+            comments: comments, // Load actual comments from database
+            COMMENTS: comments, // Legacy field for user comments
             order_type: order.order_type // Use database value (can be NULL)
           };
-        });
+        }));
         
         // Additional client-side filtering for customer name (if provided)
         if (filters.customer) {
