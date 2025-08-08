@@ -343,7 +343,13 @@ window.rmaModule = (function() {
     try {
       await saveComment(orderIdToUse, commentText);
       closeCommentDialog();
-      // Table refresh is handled in saveComment function
+      
+      // Immediate refresh like Current Jobs - fast and responsive
+      if (isFiltered && currentFilters) {
+        await loadFilteredOrders(currentFilters, currentPage);
+      } else {
+        await loadOrders(currentPage);
+      }
     } catch (error) {
       console.error('Error saving comment:', error);
       // Error notification is already shown in saveComment function
@@ -393,6 +399,7 @@ window.rmaModule = (function() {
   let hasLoadedOnce = false; // Track if we've successfully loaded once
   let sessionId = Date.now(); // Unique session ID to track navigation
   let currentFilters = null;
+  let isFiltered = false; // Track if we're currently viewing filtered results
   
   /**
    * Load orders data with pagination
@@ -401,6 +408,10 @@ window.rmaModule = (function() {
    */
   async function loadOrders(page = 1, event = null) {
     console.log(`[RMA SESSION ${sessionId}] loadOrders called with page ${page}`);
+    
+    // Reset filter state when loading regular orders
+    isFiltered = false;
+    currentFilters = null;
     
     // Prevent multiple simultaneous loads
     if (isLoading) {
@@ -487,6 +498,7 @@ window.rmaModule = (function() {
     // Update current page and filters
     currentPage = page;
     currentFilters = filters;
+    isFiltered = true; // Set flag to indicate we're viewing filtered results
     
     // Show loading message
     document.getElementById('ordersBody').innerHTML = '<tr><td colspan="9" class="loading-message">Loading filtered orders...</td></tr>';
@@ -723,11 +735,6 @@ window.rmaModule = (function() {
       if (result.success) {
         console.log('Comment saved successfully:', result);
         notifications.success('Comment saved successfully!');
-        
-        // Refresh the table to show the updated comment
-        console.log('Refreshing table to show updated comment...');
-        await loadOrders(currentPage);
-        
         return result;
       } else {
         console.error('Failed to save comment:', result.error);
@@ -1389,7 +1396,10 @@ window.rmaModule = (function() {
       commentDialog.style.display = 'none';
     }
     currentCommentOrderId = null;
-    document.getElementById('commentText').value = '';
+    const commentTextElement = document.getElementById('newJobsCommentText');
+    if (commentTextElement) {
+      commentTextElement.value = '';
+    }
   }
   
   /**
