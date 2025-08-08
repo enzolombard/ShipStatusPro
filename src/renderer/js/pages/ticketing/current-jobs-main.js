@@ -98,11 +98,12 @@ window.ticketingModule = (function() {
                   <th>Location</th>
                   <th>Status</th>
                   <th>Order Type</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="ordersBody">
                 <tr>
-                  <td colspan="9" class="loading-message">Loading orders...</td>
+                  <td colspan="10" class="loading-message">Loading orders...</td>
                 </tr>
               </tbody>
             </table>
@@ -234,12 +235,28 @@ window.ticketingModule = (function() {
   };
 
   const handleTableClick = (event) => {
-    const target = event.target.closest('.comment-btn');
-    if (target) {
-      const orderId = target.dataset.order;
-      const customer = target.dataset.customer;
+    console.log('Table click detected:', event.target);
+    
+    const commentTarget = event.target.closest('.comment-btn');
+    if (commentTarget) {
+      console.log('Comment button clicked:', commentTarget);
+      const orderId = commentTarget.dataset.order;
+      const customer = commentTarget.dataset.customer;
       openCommentDialog(orderId, customer);
+      return;
     }
+    
+    const submitTarget = event.target.closest('.submit-job-btn');
+    if (submitTarget) {
+      console.log('Submit button clicked:', submitTarget);
+      const orderId = submitTarget.dataset.order;
+      const customer = submitTarget.dataset.customer;
+      console.log('Calling handleSubmitJob with:', orderId, customer);
+      handleSubmitJob(orderId, customer);
+      return;
+    }
+    
+    console.log('No matching button found for click');
   };
 
   const handleWindowClick = (event) => {
@@ -630,7 +647,7 @@ window.ticketingModule = (function() {
     tbody.innerHTML = '';
 
     if (!orders || orders.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="no-data-message">No orders found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="no-data-message">No orders found</td></tr>';
       return;
     }
 
@@ -666,6 +683,11 @@ window.ticketingModule = (function() {
           <span class="order-type-display ${getOrderTypeCSSClass(order.ORDER_TYPE)}">
             ${getOrderTypeDisplayName(order.ORDER_TYPE)}
           </span>
+        </td>
+        <td>
+          <button class="submit-job-btn" data-order="${order.ORDNUMBER}" data-customer="${order.CUSTOMER}" title="Submit Job">
+            <i class="fas fa-arrow-right"></i>
+          </button>
         </td>
       `;
 
@@ -865,6 +887,102 @@ window.ticketingModule = (function() {
       console.error('Error saving comment:', error);
       notifications.error('Error saving comment: ' + (error.message || 'Unknown error'));
       throw error;
+    }
+  }
+
+  /**
+   * Handle submit job button click
+   * @param {string} orderId - Order ID
+   * @param {string} customer - Customer name
+   */
+  async function handleSubmitJob(orderId, customer) {
+    try {
+      console.log('=== HANDLE SUBMIT JOB CALLED ===');
+      console.log(`Submitting job ${orderId} for customer ${customer}`);
+      
+      // Get the submit button to show loading state
+      const submitBtn = document.querySelector(`.submit-job-btn[data-order="${orderId}"]`);
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        submitBtn.title = 'Submitting...';
+      }
+      
+      // Get order type from the table row
+      const row = submitBtn?.closest('tr');
+      let orderType = 'Standard';
+      if (row) {
+        const orderTypeElement = row.querySelector('.order-type-display');
+        if (orderTypeElement) {
+          orderType = orderTypeElement.textContent.trim();
+        }
+      }
+      
+      // Call the API to submit the job
+      const response = await window.electron.ipcRenderer.invoke('submit-current-job', {
+        ackNumber: orderId,
+        customer: customer,
+        orderType: orderType
+      });
+      
+      if (response && response.success) {
+        console.log(`Job ${orderId} submitted successfully`);
+        
+        // Show success message
+        showNotification(`Job ${orderId} for ${customer} has been completed and moved to completed jobs.`, 'success');
+        
+        // Remove the row from the table with animation
+        if (row) {
+          row.style.transition = 'all 0.5s ease-out';
+          row.style.opacity = '0';
+          row.style.transform = 'translateX(100%)';
+          row.style.backgroundColor = '#d4edda';
+          
+          setTimeout(() => {
+            row.remove();
+            
+            // Check if table is now empty
+            const tbody = document.getElementById('ordersBody');
+            if (tbody && tbody.children.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="10" class="no-data-message">No orders found</td></tr>';
+            }
+          }, 500);
+        }
+        
+        // Dispatch event to refresh other modules if needed
+        const refreshEvent = new CustomEvent('job-completed', {
+          detail: {
+            jobId: orderId,
+            customer: customer,
+            orderType: orderType,
+            timestamp: new Date().toISOString()
+          },
+          bubbles: true
+        });
+        document.dispatchEvent(refreshEvent);
+        
+      } else {
+        console.error(`Error submitting job ${orderId}:`, response?.error || 'Unknown error');
+        showNotification(`Error submitting job: ${response?.error || 'Unknown error'}`, 'error');
+        
+        // Reset button on error
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-arrow-right"></i>';
+          submitBtn.title = 'Submit Job';
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleSubmitJob:', error);
+      showNotification(`Error submitting job: ${error.message || 'Unknown error'}`, 'error');
+      
+      // Reset button on error
+      const submitBtn = document.querySelector(`.submit-job-btn[data-order="${orderId}"]`);
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-arrow-right"></i>';
+        submitBtn.title = 'Submit Job';
+      }
     }
   }
 

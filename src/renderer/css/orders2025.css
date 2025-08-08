@@ -856,3 +856,436 @@ tr:hover td {
 .error-message {
   color: #dc2626;
 }
+
+/* Confirmation Dialog Styles */
+.confirmation-dialog-content {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 480px;
+  width: 90%;
+  margin: 10vh auto;
+  overflow: hidden;
+  animation: confirmationSlideIn 0.3s ease-out;
+}
+
+@keyframes confirmationSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.confirmation-dialog-header {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+  padding: 24px;
+  text-align: center;
+  position: relative;
+}
+
+.confirmation-icon {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  backdrop-filter: blur(10px);
+}
+
+.confirmation-icon i {
+  font-size: 24px;
+  color: #2c2c2c;
+}
+
+.confirmation-dialog-header h3 {
+  margin: 0;
+  color: #2c2c2c;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.confirmation-dialog-body {
+  padding: 32px 24px;
+}
+
+.confirmation-details {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.detail-value {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.confirmation-message {
+  text-align: center;
+}
+
+.confirmation-message p {
+  margin: 0 0 12px 0;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.warning-text {
+  color: #f59e0b !important;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.confirmation-dialog-footer {
+  padding: 20px 24px;
+  background: #f8fafc;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn-cancel, .btn-confirm {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+}
+
+.btn-cancel {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-cancel:hover {
+  background: #e2e8f0;
+  color: #475569;
+  transform: translateY(-1px);
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+}
+
+.btn-confirm:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(16, 185, 129, 0.3);
+}
+
+.btn-confirm:active, .btn-cancel:active {
+  transform: translateY(0);
+}
+
+/* Row animation for removal */
+.row-removing {
+  transition: all 0.5s ease-out;
+  opacity: 0;
+  transform: translateX(100%);
+  background-color: #d4edda;
+}
+
+/* Submit Job Button Styles */
+.submit-job-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 36px;
+  box-shadow: 0 2px 4px -1px rgba(59, 130, 246, 0.2);
+}
+
+.submit-job-btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.submit-job-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px -1px rgba(59, 130, 246, 0.2);
+}
+
+.submit-job-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.submit-job-btn:disabled:hover {
+  background: #9ca3af;
+  transform: none;
+  box-shadow: none;
+}
+
+.submit-job-btn i {
+  font-size: 14px;
+}
+
+.submit-job-btn .fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Confirmation Dialog Styles */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  backdrop-filter: blur(2px);
+}
+
+.confirmation-dialog-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.confirmation-dialog-header {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+  color: #2c2c2c;
+  padding: 20px;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.confirmation-icon {
+  font-size: 24px;
+  color: #2c2c2c;
+}
+
+.confirmation-dialog-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.confirmation-dialog-body {
+  padding: 24px;
+}
+
+.confirmation-details {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-left: 4px solid #ffd700;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.detail-value {
+  font-weight: 500;
+  color: #212529;
+  font-size: 0.9rem;
+}
+
+.confirmation-message {
+  text-align: center;
+  color: #495057;
+}
+
+.confirmation-message p {
+  margin: 8px 0;
+}
+
+.warning-text {
+  color: #dc3545;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.confirmation-dialog-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #f8f9fa;
+  border-radius: 0 0 12px 12px;
+}
+
+.btn-cancel {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px -1px rgba(108, 117, 125, 0.2);
+}
+
+.btn-cancel:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(108, 117, 125, 0.3);
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px -1px rgba(16, 185, 129, 0.2);
+}
+
+.btn-confirm:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+}
+
+.btn-confirm:active, .btn-cancel:active {
+  transform: translateY(0);
+}
+
+
+/* Row animations */
+.row-updated {
+  animation: rowUpdateFlash 2s ease-in-out;
+}
+
+.order-type-changed {
+  animation: orderTypeChangedFlash 1s ease-in-out;
+}
+
+/* Row removal animation when job is submitted */
+.row-removing {
+  animation: rowRemoveAnimation 0.8s ease-out forwards;
+  pointer-events: none; /* Prevent clicking during animation */
+  position: relative;
+  z-index: 5;
+}
+
+@keyframes rowUpdateFlash {
+  0% { background-color: inherit; }
+  30% { background-color: rgba(212, 237, 218, 0.5); }
+  100% { background-color: inherit; }
+}
+
+@keyframes orderTypeChangedFlash {
+  0% { background-color: inherit; }
+  30% { background-color: rgba(255, 243, 205, 0.7); } /* Yellow highlight */
+  100% { background-color: inherit; }
+}
+
+@keyframes rowRemoveAnimation {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    background-color: #d4edda; /* Green success color */
+  }
+  20% {
+    opacity: 0.9;
+    transform: translateX(0) scale(1.02);
+    background-color: #d4edda;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+    background-color: #d4edda;
+  }
+}

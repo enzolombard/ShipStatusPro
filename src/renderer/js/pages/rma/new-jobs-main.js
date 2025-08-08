@@ -981,18 +981,31 @@ window.rmaModule = (function() {
         // Get the previous value from the data attribute
         const previousValue = orderTypeDropdown.dataset.previousValue || '';
         
-        // Update the previous value to the current value before saving
+        // Update the previous value to the current value but don't save to database yet
         orderTypeDropdown.dataset.previousValue = currentValue;
+        orderTypeDropdown.dataset.currentValue = currentValue;
         
-        // Save the new value
-        saveOrderType(orderId, currentValue);
+        console.log(`Order type changed for ${orderId}: ${previousValue} → ${currentValue} (will be saved on submit)`); 
+        
+        // Add visual feedback that the value has changed but not saved
+        const row = orderTypeDropdown.closest('tr');
+        if (row) {
+          // Add a temporary highlight class
+          row.classList.add('order-type-changed');
+          setTimeout(() => {
+            row.classList.remove('order-type-changed');
+          }, 1000);
+        }
       });
       
       // Add event listener for submit button
       submitJobBtn.addEventListener('click', () => {
+        console.log('=== RMA SUBMIT BUTTON CLICKED ===');
         const orderId = submitJobBtn.dataset.order;
         const customer = submitJobBtn.dataset.customer;
-        submitJobToNewJobs(orderId, customer, order);
+        console.log('Order ID:', orderId, 'Customer:', customer);
+        console.log('Calling showSubmitConfirmationDialog');
+        showSubmitConfirmationDialog(orderId, customer, order);
       });
       
       // Comment button event listener handled by event delegation in handleTableClick
@@ -1236,20 +1249,96 @@ window.rmaModule = (function() {
   }
   
   /**
-   * Submit a job from RMA to New Jobs table
+   * Show confirmation dialog before submitting a job
    * @param {string} orderId - Order ID (ack_number)
    * @param {string} customer - Customer name
    * @param {Object} orderData - Full order data object
    */
-  async function submitJobToNewJobs(orderId, customer, orderData) {
-    try {
-      if (!orderId) {
-        console.error('Missing order ID in submitJobToNewJobs');
-        notifications.error('Error: Missing order ID. Please try again.');
-        return;
-      }
+  function showSubmitConfirmationDialog(orderId, customer, orderData) {
+    console.log('=== SHOWING SUBMIT CONFIRMATION DIALOG ===');
+    console.log('Parameters:', { orderId, customer, orderData });
+    
+    // Get order type for display
+    const orderType = getOrderTypeForOrder(orderId);
+    
+    // Validate that an order type is selected before showing the dialog
+    if (!orderType || orderType === 'none' || orderType === 'Not Set') {
+      console.error(`Cannot show confirmation dialog for job ${orderId}: No order type selected`);
+      notifications.error('Please select an order type before submitting the job.');
+      return;
+    }
+    
+    // Remove any existing confirmation dialog
+    const existingDialog = document.getElementById('submitConfirmationDialog');
+    if (existingDialog) {
+      console.log('Removing existing dialog');
+      existingDialog.remove();
+    }
+    
+    // Create confirmation dialog HTML
+    const dialogHTML = `
+      <div id="submitConfirmationDialog" class="dialog-overlay" style="display: block;">
+        <div class="confirmation-dialog-content">
+          <div class="confirmation-dialog-header">
+            <div class="confirmation-icon">
+              <i class="fas fa-paper-plane"></i>
+            </div>
+            <h3>Submit Job to New Jobs</h3>
+          </div>
+          <div class="confirmation-dialog-body">
+            <div class="confirmation-details">
+              <div class="detail-row">
+                <span class="detail-label">Order Number:</span>
+                <span class="detail-value">${orderId}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Customer:</span>
+                <span class="detail-value">${customer}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Order Type:</span>
+                <span class="detail-value">${getOrderTypeForOrder(orderId) || 'Not Selected'}</span>
+              </div>
+            </div>
+            <div class="confirmation-message">
+              <p><strong>Are you sure you want to submit this job?</strong></p>
+              <p class="warning-text">This action will move the order to the New Jobs queue and remove it from this list.</p>
+            </div>
+          </div>
+          <div class="confirmation-dialog-footer">
+            <button id="cancelSubmit" class="btn-cancel">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+            <button id="confirmSubmit" class="btn-confirm">
+              <i class="fas fa-check"></i> Submit Job
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Add dialog to DOM
+    console.log('Adding dialog to DOM');
+    document.body.insertAdjacentHTML('beforeend', dialogHTML);
+    
+    // Get dialog elements
+    const dialog = document.getElementById('submitConfirmationDialog');
+    const cancelBtn = document.getElementById('cancelSubmit');
+    const confirmBtn = document.getElementById('confirmSubmit');
+    
+    console.log('Dialog elements:', { dialog, cancelBtn, confirmBtn });
+    
+    // Add event listeners
+    cancelBtn.addEventListener('click', () => {
+      dialog.remove();
+    });
+    
+    confirmBtn.addEventListener('click', async () => {
+      console.log('=== CONFIRM BUTTON CLICKED ===');
+      console.log('Confirm button clicked, calling submitJobToNewJobs for order:', orderId);
+      dialog.remove();
       
-      // Show loading indicator on the button
+      // Disable the submit button immediately to prevent double-clicks
       const submitBtn = document.querySelector(`.submit-job-btn[data-order="${orderId}"]`);
       if (submitBtn) {
         submitBtn.disabled = true;
@@ -1257,15 +1346,107 @@ window.rmaModule = (function() {
         submitBtn.title = 'Submitting...';
       }
       
-      // Get the order type from the dropdown
-      const orderTypeDropdown = document.querySelector(`.order-type-dropdown[data-order="${orderId}"]`);
-      const orderType = orderTypeDropdown ? orderTypeDropdown.value : null;
-      
-      // Make sure order type is selected before submitting
-      if (!orderType) {
-        notifications.warning('Please select an Order Type before submitting this job.');
+      try {
+        await submitJobToNewJobs(orderId, customer, orderData);
+        console.log('submitJobToNewJobs completed successfully');
         
-        // Reset button
+        // Reset button state after successful submission (row will be removed anyway)
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-arrow-right"></i>';
+          submitBtn.title = 'Submit to New Jobs';
+        }
+      } catch (error) {
+        console.error('Error in submitJobToNewJobs from confirm button:', error);
+        notifications.error(`Error submitting job: ${error.message || 'Unknown error'}`);
+        
+        // Reset button on error
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-arrow-right"></i>';
+          submitBtn.title = 'Submit to New Jobs';
+        }
+      }
+    });
+    
+    // Close dialog when clicking outside
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) {
+        dialog.remove();
+      }
+    });
+    
+    // Close dialog on Escape key
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        dialog.remove();
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+  }
+  
+  /**
+   * Get order type for a specific order
+   * @param {string} orderId - Order ID
+   * @returns {string} Order type
+   */
+  function getOrderTypeForOrder(orderId) {
+    // First try to get from dropdown (if it exists)
+    const orderTypeDropdown = document.querySelector(`.order-type-dropdown[data-order="${orderId}"]`);
+    if (orderTypeDropdown) {
+      return orderTypeDropdown.value;
+    }
+    
+    // If dropdown doesn't exist, try to get from display element (read-only span)
+    const orderTypeDisplay = document.querySelector(`.order-type-display[data-order="${orderId}"]`);
+    if (orderTypeDisplay) {
+      return orderTypeDisplay.dataset.type || orderTypeDisplay.textContent.trim();
+    }
+    
+    // If no element found, try to get from order data in the row
+    const row = document.querySelector(`tr[data-order="${orderId}"]`);
+    if (row && row.dataset.orderType) {
+      return row.dataset.orderType;
+    }
+    
+    // Default fallback
+    return 'Standard';
+  }
+  
+  /**
+   * Submit a job from RMA to New Jobs table
+   * @param {string} orderId - Order ID (ack_number)
+   * @param {string} customer - Customer name
+   * @param {Object} orderData - Full order data object
+   */
+  async function submitJobToNewJobs(orderId, customer, orderData) {
+    console.log('=== SUBMIT JOB TO NEW JOBS CALLED ===');
+    console.log('Parameters:', { orderId, customer, orderData });
+    try {
+      if (!orderId) {
+        console.error('Missing order ID in submitJobToNewJobs');
+        notifications.error('Error: Missing order ID. Please try again.');
+        return;
+      }
+      
+      // Get the submit button reference
+      const submitBtn = document.querySelector(`.submit-job-btn[data-order="${orderId}"]`);
+      
+      // Get the order type - either from dropdown or from a display element
+      let orderType = getOrderTypeForOrder(orderId);
+      
+      // If still no order type, try to get from order data
+      if (!orderType && orderData) {
+        orderType = orderData.orderType || orderData.ORDER_TYPE || null;
+      }
+      
+      // Validate that an order type is selected
+      if (!orderType || orderType === 'none' || orderType === 'Not Set') {
+        console.error(`Cannot submit job ${orderId}: No order type selected`);
+        notifications.error('Please select an order type before submitting the job.');
+        
+        // Reset button state
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerHTML = '<i class="fas fa-arrow-right"></i>';
@@ -1274,52 +1455,70 @@ window.rmaModule = (function() {
         return;
       }
       
+      // Save the order type to the database as part of the submission process
+      console.log(`Saving order type as part of submission process: ${orderId} -> ${orderType}`);
+      try {
+        await saveOrderType(orderId, orderType);
+        console.log(`Order type saved successfully for ${orderId} during submission`);
+      } catch (orderTypeError) {
+        console.error(`Failed to save order type during submission: ${orderTypeError}`);
+        // Continue with submission even if order type save fails
+      }
+      
       console.log(`Submitting job ${orderId} to New Jobs table with order type: ${orderType}`);
       
       // Call the API to submit the job
-      const response = await window.electron.ipcRenderer.invoke('submit-job-to-new', {
+      console.log('Calling IPC submit-job-to-new with data:', {
         ackNumber: orderId,
         orderType: orderType,
-        customer: customer,
-        // Include any other necessary data
-        orderData: {
-          classification: orderData.classification || orderData.status,
-          comments: orderData.comments || orderData.COMMENTS,
-          location: orderData.LOCATION
-        }
+        customer: customer
       });
       
-      // Reset button
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-arrow-right"></i>';
-        submitBtn.title = 'Submit to New Jobs';
+      let response;
+      try {
+        response = await window.electron.ipcRenderer.invoke('submit-job-to-new', {
+          ackNumber: orderId,
+          orderType: orderType,
+          customer: customer,
+          // Include any other necessary data
+          orderData: {
+            classification: orderData.classification || orderData.status,
+            comments: orderData.comments || orderData.COMMENTS,
+            location: orderData.LOCATION
+          }
+        });
+        
+        console.log('IPC submit-job-to-new response:', response);
+      } catch (ipcError) {
+        console.error('IPC submit-job-to-new error:', ipcError);
+        throw ipcError;
       }
       
-      if (response.success) {
+      if (response && response.success) {
         console.log(`Job ${orderId} submitted successfully to New Jobs`);
         
         // Show success message
         notifications.success(`Job ${orderId} for ${customer} has been successfully submitted to New Jobs.`);
         
-        // Highlight the row to indicate submission but don't change the status
+        // Remove the row from the table with a smooth animation
         const row = submitBtn?.closest('tr');
         if (row) {
-          // Add a submitted class to the row for styling
-          row.classList.add('row-submitted');
+          // Add CSS class for animation instead of inline styles
+          row.classList.add('row-removing');
           
-          // Add a visual indicator that it's been submitted without changing the status
-          const submitCell = submitBtn.closest('td');
-          if (submitCell) {
-            // Add a small badge or indicator next to the submit button
-            const indicator = document.createElement('span');
-            indicator.className = 'submitted-indicator';
-            indicator.innerHTML = '<i class="fas fa-check" style="color: green; margin-left: 5px;"></i>';
-            submitCell.appendChild(indicator);
-          }
+          // Remove the row after animation completes
+          setTimeout(() => {
+            row.remove();
+            
+            // Check if table is now empty and show appropriate message
+            const tbody = document.getElementById('rmaOrdersBody');
+            if (tbody && tbody.children.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="10" class="no-data-message">No orders found</td></tr>';
+            }
+          }, 800); // Longer timeout to match the animation duration
         }
         
-        // Dispatch a custom event to notify other modules (like New Jobs) to refresh their data
+        // Dispatch a custom event to notify other modules (like Current Jobs) to refresh their data
         const refreshEvent = new CustomEvent('new-jobs-updated', {
           detail: {
             jobId: orderId,
@@ -1332,8 +1531,15 @@ window.rmaModule = (function() {
         document.dispatchEvent(refreshEvent);
         console.log('Dispatched new-jobs-updated event to trigger refresh in other modules');
       } else {
-        console.error(`Error submitting job ${orderId}:`, response.error);
-        notifications.error(`Error submitting job: ${response.error || 'Unknown error'}`);
+        console.error(`Error submitting job ${orderId}:`, response?.error || 'Unknown error');
+        notifications.error(`Error submitting job: ${response?.error || 'Unknown error'}`);
+        
+        // Reset button on error
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-arrow-right"></i>';
+          submitBtn.title = 'Submit to New Jobs';
+        }
       }
     } catch (error) {
       console.error('Error in submitJobToNewJobs:', error);

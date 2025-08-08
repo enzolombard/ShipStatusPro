@@ -67,6 +67,10 @@ async function logActivity(activityData) {
 /**
  * Initialize shipment API IPC handlers
  */
+
+// Guard to prevent duplicate handler registration
+let handlersInitialized = false;
+
 /**
  * Ensures the order_type column exists in the shipment_classification table
  */
@@ -100,7 +104,14 @@ async function ensureOrderTypeColumn() {
 }
 
 function initShipmentAPI() {
+  // Prevent duplicate handler registration
+  if (handlersInitialized) {
+    console.log('Shipment API handlers already initialized, skipping...');
+    return;
+  }
+  
   console.log('Initializing Shipment API with database connection...');
+  handlersInitialized = true;
   
   // Ensure the order_type column exists
   ensureOrderTypeColumn().catch(err => {
@@ -115,11 +126,13 @@ function initShipmentAPI() {
       // Calculate offset for pagination
       const offset = (page - 1) * pageSize;
       
-      // Get total count for pagination
+      // Get total count for pagination (exclude entries already submitted to new_jobs)
       const [countResult] = await db.getAll(`
         SELECT COUNT(*) as total 
         FROM \`SAGE-AUTO-UPDATE\`.OEORDH o
+        LEFT JOIN \`ShipStatusPro\`.new_jobs nj ON o.ORDNUMBER = nj.ack_number
         WHERE o.ORDNUMBER LIKE 'ACK%'
+        AND nj.ack_number IS NULL
       `);
       
       const totalCount = countResult ? countResult.total : 0;
@@ -128,6 +141,7 @@ function initShipmentAPI() {
       console.log(`Total records: ${totalCount}, Total pages: ${totalPages}`);
       
       // Get shipments with JOIN to OEORDH for complete order data
+      // Exclude entries that have already been submitted to new_jobs table
       // Using string interpolation for LIMIT to avoid parameter issues with cross-database queries
       const shipments = await db.getAll(`
         SELECT 
@@ -148,7 +162,9 @@ function initShipmentAPI() {
           COALESCE(sc.classification, 'NEW') as user_status
         FROM \`SAGE-AUTO-UPDATE\`.OEORDH o
         LEFT JOIN \`ShipStatusPro\`.shipment_classification sc ON o.ORDNUMBER = sc.ack_number
-        WHERE o.ORDNUMBER LIKE 'ACK%'
+        LEFT JOIN \`ShipStatusPro\`.new_jobs nj ON o.ORDNUMBER = nj.ack_number
+        WHERE o.ORDNUMBER LIKE 'ACK%' 
+        AND nj.ack_number IS NULL
         ORDER BY o.ORDNUMBER DESC
         LIMIT ${pageSize} OFFSET ${offset}
       `);
@@ -207,12 +223,14 @@ function initShipmentAPI() {
       // Calculate offset for pagination
       const offset = (page - 1) * pageSize;
       
-      // Get total count for pagination with filters applied
+      // Get total count for pagination with filters applied (exclude entries already submitted to new_jobs)
       const [countResult] = await db.getAll(`
         SELECT COUNT(*) as total 
         FROM \`SAGE-AUTO-UPDATE\`.OEORDH o
         LEFT JOIN \`ShipStatusPro\`.shipment_classification sc ON o.ORDNUMBER = sc.ack_number
-        WHERE o.ORDNUMBER LIKE 'ACK%' ${whereClause}
+        LEFT JOIN \`ShipStatusPro\`.new_jobs nj ON o.ORDNUMBER = nj.ack_number
+        WHERE o.ORDNUMBER LIKE 'ACK%' 
+        AND nj.ack_number IS NULL ${whereClause}
       `, countParams);
       
       const totalCount = countResult ? countResult.total : 0;
@@ -221,6 +239,7 @@ function initShipmentAPI() {
       console.log(`Total filtered records: ${totalCount}, Total pages: ${totalPages}`);
       
       // Get filtered shipments with JOIN to OEORDH for complete order data
+      // Exclude entries that have already been submitted to new_jobs table
       // Using string interpolation for LIMIT to avoid parameter issues
       const shipments = await db.getAll(`
         SELECT 
@@ -241,7 +260,9 @@ function initShipmentAPI() {
           COALESCE(sc.classification, 'NEW') as user_status
         FROM \`SAGE-AUTO-UPDATE\`.OEORDH o
         LEFT JOIN \`ShipStatusPro\`.shipment_classification sc ON o.ORDNUMBER = sc.ack_number
-        WHERE o.ORDNUMBER LIKE 'ACK%' ${whereClause}
+        LEFT JOIN \`ShipStatusPro\`.new_jobs nj ON o.ORDNUMBER = nj.ack_number
+        WHERE o.ORDNUMBER LIKE 'ACK%' 
+        AND nj.ack_number IS NULL ${whereClause}
         ORDER BY o.ORDNUMBER DESC
         LIMIT ${pageSize} OFFSET ${offset}
       `, countParams);
@@ -1226,6 +1247,110 @@ function initShipmentAPI() {
   
   // getTimeAgo function is defined at the top of the file
 }
+
+  // Submit job from Current Jobs to Completed Jobs
+  ipcMain.handle('submit-current-job', async (event, data) => {
+    try {
+      const { ackNumber, customer, orderType } = data;
+      
+      console.log(`Submitting current job ${ackNumber} to completed jobs with order type: ${orderType}`);
+      
+      // Validate input parameters
+      if (!ackNumber) {
+        console.error('Missing ackNumber parameter');
+        return {
+          success: false,
+          error: 'Missing order ID (ackNumber)'
+        };
+      }
+      
+      // 1. Create completed_jobs table if it doesn't exist
+      try {
+        await db.getAll(`
+          CREATE TABLE IF NOT EXISTS \`ShipStatusPro\`.\`completed_jobs\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`ack_number\` VARCHAR(50) NOT NULL,
+            \`customer\` VARCHAR(255),
+            \`order_type\` VARCHAR(50),
+            \`completion_date\` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            \`status\` VARCHAR(50) DEFAULT 'Completed',
+            UNIQUE KEY (\`ack_number\`)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+        console.log('completed_jobs table created or verified');
+      } catch (createError) {
+        console.warn('Could not create completed_jobs table:', createError.message);
+      }
+      
+      // 2. Insert into completed_jobs table
+      try {
+        await db.run(`
+          INSERT INTO \`ShipStatusPro\`.completed_jobs 
+          (ack_number, customer, order_type, completion_date) 
+          VALUES (?, ?, ?, NOW())
+          ON DUPLICATE KEY UPDATE 
+            customer = VALUES(customer),
+            order_type = VALUES(order_type),
+            completion_date = NOW()
+        `, [ackNumber, customer, orderType]);
+        
+        console.log(`Successfully inserted/updated job ${ackNumber} in completed_jobs table`);
+      } catch (insertError) {
+        console.error('Error inserting into completed_jobs table:', insertError);
+        return {
+          success: false,
+          error: `Database error: ${insertError.message}`
+        };
+      }
+      
+      // 3. Update shipment_classification to mark as completed
+      try {
+        await db.run(`
+          UPDATE \`ShipStatusPro\`.shipment_classification 
+          SET classification = 'Completed' 
+          WHERE ack_number = ?
+        `, [ackNumber]);
+        console.log(`Updated shipment classification for ${ackNumber} to Completed`);
+      } catch (updateError) {
+        console.warn('Could not update shipment classification:', updateError.message);
+      }
+      
+      // 4. Remove from new_jobs table
+      try {
+        await db.run(`
+          DELETE FROM \`ShipStatusPro\`.new_jobs 
+          WHERE ack_number = ?
+        `, [ackNumber]);
+        console.log(`Removed job ${ackNumber} from new_jobs table`);
+      } catch (deleteError) {
+        console.warn('Could not remove from new_jobs table:', deleteError.message);
+      }
+      
+      // 5. Log the activity
+      await logActivity({
+        activityType: 'job_completed',
+        description: `Job ${ackNumber} for ${customer} completed and moved to completed jobs`,
+        ackNumber: ackNumber,
+        userName: 'system', // TODO: Get from session when user management is implemented
+        oldValue: 'In Progress',
+        newValue: 'Completed',
+        tableName: 'completed_jobs'
+      });
+      
+      console.log(`Job ${ackNumber} successfully submitted to completed jobs`);
+      
+      return {
+        success: true,
+        message: 'Job successfully completed and moved to completed jobs'
+      };
+    } catch (error) {
+      console.error('Error submitting current job:', error);
+      return {
+        success: false,
+        error: `Failed to submit job: ${error.message}`
+      };
+    }
+  });
 
 module.exports = {
   initShipmentAPI
